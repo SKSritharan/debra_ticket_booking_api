@@ -19,21 +19,27 @@ Route::post('/login', [\App\Http\Controllers\API\V1\AuthController::class, 'logi
 Route::post('/register', [\App\Http\Controllers\API\V1\AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/profile', function (Request $request) {
-            return $request->user();
-        });
+    Route::get('/profile', function (Request $request) {
+        return $request->user();
+    });
 
+    Route::controller(\App\Http\Controllers\API\V1\EventController::class)->prefix('events')->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
+    });
+
+    Route::controller(\App\Http\Controllers\API\V1\TicketPurchaseController::class)->prefix('event')->group(function () {
+        Route::post('/ticket/{id}', 'purchase');
+        Route::get('/tickets', 'getPurchasedTickets');
+    });
+
+    Route::middleware('role:admin')->group(function () {
         Route::controller(\App\Http\Controllers\API\V1\EventController::class)->prefix('events')->group(function () {
-            Route::get('/', 'index');
-            Route::post('/', 'create');
-            Route::get('/{id}', 'show');
             Route::put('/{id}', 'update');
             Route::delete('/{id}', 'destroy');
         });
 
         Route::controller(\App\Http\Controllers\API\V1\TicketPurchaseController::class)->prefix('event')->group(function () {
-            Route::post('/ticket/{id}', 'purchase');
             Route::get('/earning/event/{id}', 'earningsByEvent');
             Route::get('/earning/partner/{id}', 'earningsByPartner');
             Route::get('/earning', 'totalEarnings');
@@ -41,33 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:partner')->group(function () {
-        Route::get('/profile', function (Request $request) {
-            return $request->user();
-        });
-
         Route::controller(\App\Http\Controllers\API\V1\EventController::class)->prefix('events')->group(function () {
-            Route::get('/', 'index');
-            Route::post('/', 'create');
-            Route::get('/{id}', 'show');
+            Route::post('/', 'store');
         });
 
         Route::controller(\App\Http\Controllers\API\V1\TicketPurchaseController::class)->prefix('event')->group(function () {
             Route::get('/partner/earning', 'getOwnEarnings');
-        });
-    });
-
-    Route::middleware('role:user')->group(function () {
-        Route::get('/profile', function (Request $request) {
-            return $request->user();
-        });
-
-        Route::controller(\App\Http\Controllers\API\V1\EventController::class)->prefix('events')->group(function () {
-            Route::get('/', 'index');
-            Route::get('/{id}', 'show');
-        });
-
-        Route::controller(\App\Http\Controllers\API\V1\TicketPurchaseController::class)->prefix('event')->group(function () {
-            Route::post('/ticket/{id}', 'purchase');
         });
     });
 });

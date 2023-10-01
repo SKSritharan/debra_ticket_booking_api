@@ -23,5 +23,24 @@ class DatabaseSeeder extends Seeder
              'role_id' => 1,
              'password' => Hash::make('12345678')
          ]);
+
+        \App\Models\User::factory()->create([
+            'name' => 'Debra User',
+            'email' => 'user@debra.com',
+            'role_id' => 3,
+            'password' => Hash::make('12345678')
+        ]);
+
+        $user = \App\Models\User::create([
+            'name' => 'Debra Partner',
+            'email' => 'partner@debra.com',
+            'role_id' => 2,
+            'password' => Hash::make('12345678')
+        ]);
+
+        $partner = $user->partner()->create([
+            'contact_number' => '0771234567',
+            'company_name' => 'test company'
+        ]);
     }
 }

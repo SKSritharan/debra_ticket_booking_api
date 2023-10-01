@@ -69,4 +69,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Partner::class);
     }
+
+    public function ticketPurchase()
+    {
+        return $this->hasMany(TicketPurchase::class);
+    }
 }

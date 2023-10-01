@@ -14,7 +14,7 @@ class EventController extends Controller
         return response()->json(['events' => $events], 200);
     }
 
-    public function create(Request $request)
+    public function store(Request $request)
     {
         // Validate the request data
         $validatedEventData = $request->validate([
