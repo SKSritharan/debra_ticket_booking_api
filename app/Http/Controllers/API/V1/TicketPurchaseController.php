@@ -65,7 +65,7 @@ class TicketPurchaseController extends Controller
             ->where('event_id', $eventId)
             ->sum(DB::raw('ticket_price * (allocated_seats - available_quantity)'));
 
-        return response()->json(['earnings' => $earnings], 200);
+        return response()->json(['event' => $event, 'earnings' => $earnings], 200);
     }
 
     /**
@@ -83,32 +83,49 @@ class TicketPurchaseController extends Controller
             return response()->json(['message' => 'Partner not found.'], 404);
         }
 
-        // Retrieve earnings with event details for each event
-        $events = DB::table('events')
-            ->where('partner_id', $partnerId)
-            ->get();
+        // Retrieve partner information
+        $partnerInfo = [
+            'id' => $partner->id,
+            'user_id' => $partner->user_id,
+            'contact_number' => $partner->contact_number,
+            'company_name' => $partner->company_name,
+            'status' => $partner->status,
+        ];
+
+        // Retrieve events associated with the partner
+        $events = Event::where('partner_id', $partnerId)->get();
 
         $earningsByEvent = [];
+        $totalEarnings = 0;
+
         foreach ($events as $event) {
             $earnings = DB::table('tickets')
                 ->where('event_id', $event->id)
                 ->sum(DB::raw('ticket_price * (allocated_seats - available_quantity)'));
 
             // Include event details along with earnings
+            $eventDetails = [
+                'id' => $event->id,
+                'name' => $event->event_name,
+                'description' => $event->event_description,
+                'start_date' => $event->event_start_date,
+                'end_date' => $event->event_end_date,
+                'location' => $event->event_location,
+            ];
+
             $earningsByEvent[] = [
-                'event' => [
-                    'id' => $event->id,
-                    'name' => $event->event_name,
-                    'description' => $event->event_description,
-                    'start_date' => $event->event_start_date,
-                    'end_date' => $event->event_end_date,
-                    'location' => $event->event_location,
-                ],
+                'event' => $eventDetails,
                 'earning' => $earnings,
             ];
+
+            $totalEarnings += $earnings;
         }
 
-        return response()->json(['earnings_by_event' => $earningsByEvent], 200);
+        return response()->json([
+            'partner_info' => $partnerInfo,
+            'events' => $earningsByEvent,
+            'total_earning' => $totalEarnings,
+        ], 200);
     }
 
     /**
@@ -181,29 +198,59 @@ class TicketPurchaseController extends Controller
      */
     public function totalEarnings()
     {
-        // Retrieve earnings with event details for each event
-        $events = Event::all();
+        // Retrieve all partners
+        $partners = Partner::all();
 
-        $earningsByEvent = [];
-        foreach ($events as $event) {
-            $earnings = DB::table('tickets')
-                ->where('event_id', $event->id)
-                ->sum(DB::raw('ticket_price * (allocated_seats - available_quantity)'));
+        $partnersInfo = [];
 
-            // Include event details along with earnings
-            $earningsByEvent[] = [
-                'event' => [
+        foreach ($partners as $partner) {
+            $partnerId = $partner->id;
+
+            // Retrieve partner information
+            $partnerInfo = [
+                'id' => $partner->id,
+                'user_id' => $partner->user_id,
+                'contact_number' => $partner->contact_number,
+                'company_name' => $partner->company_name,
+                'status' => $partner->status,
+            ];
+
+            // Retrieve events associated with the partner
+            $events = Event::where('partner_id', $partnerId)->get();
+
+            $earningsByEvent = [];
+            $totalEarnings = 0;
+
+            foreach ($events as $event) {
+                $earnings = DB::table('tickets')
+                    ->where('event_id', $event->id)
+                    ->sum(DB::raw('ticket_price * (allocated_seats - available_quantity)'));
+
+                // Include event details along with earnings
+                $eventDetails = [
                     'id' => $event->id,
                     'name' => $event->event_name,
                     'description' => $event->event_description,
                     'start_date' => $event->event_start_date,
                     'end_date' => $event->event_end_date,
                     'location' => $event->event_location,
-                ],
-                'earning' => $earnings,
+                ];
+
+                $earningsByEvent[] = [
+                    'event' => $eventDetails,
+                    'earning' => $earnings,
+                ];
+
+                $totalEarnings += $earnings;
+            }
+
+            $partnersInfo[] = [
+                'partner_info' => $partnerInfo,
+                'events' => $earningsByEvent,
+                'total_earning' => $totalEarnings,
             ];
         }
 
-        return response()->json(['earnings_by_event' => $earningsByEvent], 200);
+        return response()->json(['partners_info' => $partnersInfo], 200);
     }
 }

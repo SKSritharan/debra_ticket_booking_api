@@ -16,9 +16,10 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        $partner = auth()->user()->partner;
+
         // Validate the request data
         $validatedEventData = $request->validate([
-            'partner_id' => 'required|exists:partners,id',
             'event_name' => 'required|string|max:255',
             'event_description' => 'nullable|string',
             'event_start_date' => 'required|date',
@@ -34,7 +35,7 @@ class EventController extends Controller
         ]);
 
         // Create a new event
-        $event = Event::create($validatedEventData);
+        $event = $partner->events()->create($validatedEventData);
         $ticketData = array_merge($validatedTicketData, ['available_quantity' => $validatedTicketData['allocated_seats']]);
         $ticket = $event->tickets()->create($ticketData);
 
