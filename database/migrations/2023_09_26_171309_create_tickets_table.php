@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained('events');
             $table->decimal('ticket_price', 10, 2);
             $table->integer('allocated_seats');
-            $table->integer('available_quantity')->nullable();
+            $table->integer('available_quantity')->nullable()->default(0);
             $table->dateTime('sale_start_date');
             $table->dateTime('sale_end_date');
             $table->timestamps();

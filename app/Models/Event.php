@@ -25,4 +25,15 @@ class Event extends Model
     {
         return $this->belongsTo(Partner::class);
     }
+
+    public function scopeSearch($query, $searchTerm)
+    {
+        if ($searchTerm) {
+            return $query->where('event_name', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('event_description', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('event_location', 'LIKE', '%' . $searchTerm . '%');
+        }
+
+        return $query;
+    }
 }
