@@ -19,17 +19,39 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
+        $roleValidationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
-        ])->validate();
+            'role_id' => ['required'],
+        ];
 
-        return User::create([
+        // Add additional validation rules for 'company_name' and 'contact_number' if role is 'partner' (ID 2)
+        if ($input['role_id'] == 2) {
+            $roleValidationRules['company_name'] = ['required'];
+            $roleValidationRules['contact_number'] = ['required', 'regex:/^\+(?:[0-9] ?){6,14}[0-9]$/',];
+        }
+
+        Validator::make($input, $roleValidationRules)->validate();
+
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
+            'role_id' => $input['role_id'],
             'password' => Hash::make($input['password']),
         ]);
+
+        // Create a partner record only if the role is 'partner'
+        if ($input['role_id'] == 2) {
+            $partner = $user->partner()->create([
+                'user_id' => $user->id,
+                'contact_number' => $input['contact_number'],
+                'company_name' => $input['company_name'],
+                'status' => true,
+            ]);
+        }
+
+        return $user;
     }
 }
